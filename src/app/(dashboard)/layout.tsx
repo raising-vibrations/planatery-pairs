@@ -17,11 +17,13 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { planetaryPairs } from "@/data/planetaryPairs";
-import { BookOpen, Dices, Home, Sparkles, User, Moon, Sun, LogOut } from "lucide-react";
+import { BookOpen, Dices, Home, Sparkles, User, Moon, Sun, LogOut, MessageSquare } from "lucide-react";
 import { SignInButton, SignOutButton, useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
 
 // Simple placeholder when Clerk isn't configured
 function AccountPlaceholder() {
@@ -41,11 +43,27 @@ export default function DashboardLayout({
   const { user, isLoaded } = useUser();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const syncUser = useMutation(api.users.syncUser);
 
   // Avoid hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Sync user to Convex when authenticated
+  useEffect(() => {
+    if (user && isLoaded) {
+      syncUser({
+        clerkId: user.id,
+        email: user.emailAddresses[0].emailAddress,
+        firstName: user.firstName || undefined,
+        lastName: user.lastName || undefined,
+        imageUrl: user.imageUrl || undefined,
+      }).catch((error) => {
+        console.error("Failed to sync user:", error);
+      });
+    }
+  }, [user, isLoaded, syncUser]);
 
   return (
     <SidebarProvider>
@@ -128,6 +146,25 @@ export default function DashboardLayout({
                       <Link href="/understanding-phases-aspects">
                         <BookOpen className="h-4 w-4" />
                         <span>Phases & Aspects</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            <SidebarGroup>
+              <SidebarGroupLabel>Community</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === "/community" || pathname.startsWith("/community/")}
+                    >
+                      <Link href="/community">
+                        <MessageSquare className="h-4 w-4" />
+                        <span>Forum</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

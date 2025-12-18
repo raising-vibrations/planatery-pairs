@@ -1,6 +1,9 @@
-import type { Metadata } from "next";
+"use client";
+
 import { Inter, Geist_Mono } from "next/font/google";
-import { ClerkProvider } from "@clerk/nextjs";
+import { ClerkProvider, useAuth } from "@clerk/nextjs";
+import { ConvexProviderWithClerk } from "convex/react-clerk";
+import { convex } from "@/lib/convex";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
@@ -14,11 +17,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Planetary Pairs",
-  description: "Explore Jeffrey Wolf Green's 6 Key Planetary Pairs",
-};
-
 const hasValidClerkKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith("pk_");
 
 export default function RootLayout({
@@ -31,14 +29,16 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+        <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+          </ThemeProvider>
+        </ConvexProviderWithClerk>
       </body>
     </html>
   );
