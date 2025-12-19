@@ -1,9 +1,10 @@
 "use client";
 
 import { Inter, Geist_Mono } from "next/font/google";
-import { ClerkProvider, useAuth } from "@clerk/nextjs";
+import { ClerkProvider } from "@clerk/nextjs";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { convex } from "@/lib/convex";
+import { useConvexAuth } from "@/lib/useConvexAuth";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
@@ -29,7 +30,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${geistMono.variable} antialiased`}
       >
-        <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+        <ConvexProviderWithClerk client={convex} useAuth={useConvexAuth}>
           <ThemeProvider
             attribute="class"
             defaultTheme="system"

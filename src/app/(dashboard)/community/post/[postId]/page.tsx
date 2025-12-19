@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useQuery, useMutation } from "convex/react";
 import { useUser } from "@clerk/nextjs";
 import { formatDistanceToNow } from "date-fns";
-import { ChevronLeft, User, Edit, Trash2, Loader2 } from "lucide-react";
+import { ChevronLeft, User, Edit, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { api } from "../../../../../../convex/_generated/api";
 import { Id } from "../../../../../../convex/_generated/dataModel";
@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LikeButton } from "@/components/community/LikeButton";
 import { CommentSection } from "@/components/community/CommentSection";
+import { PostEditDialog } from "@/components/community/PostEditDialog";
+import { DeleteConfirmDialog } from "@/components/community/DeleteConfirmDialog";
 import { planetaryPairs } from "@/data/planetaryPairs";
 
 interface PostDetailPageProps {
@@ -26,6 +28,8 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
   const router = useRouter();
   const { user } = useUser();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const post = useQuery(api.posts.getPost, { postId: postId as Id<"posts"> });
   const chartUrl = post?.chartImageId
@@ -67,10 +71,6 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
   const isAuthor = user?.id === post.author?.clerkId;
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this post? This action cannot be undone.")) {
-      return;
-    }
-
     setIsDeleting(true);
     try {
       await deletePost({ postId: post._id });
@@ -78,6 +78,7 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
     } catch (error) {
       console.error("Failed to delete post:", error);
       setIsDeleting(false);
+      setShowDeleteDialog(false);
     }
   };
 
@@ -92,21 +93,16 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
         </Link>
         {isAuthor && (
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled>
+            <Button variant="outline" size="sm" onClick={() => setShowEditDialog(true)}>
               <Edit className="h-4 w-4 mr-2" />
               Edit
             </Button>
             <Button
               variant="destructive"
               size="sm"
-              onClick={handleDelete}
-              disabled={isDeleting}
+              onClick={() => setShowDeleteDialog(true)}
             >
-              {isDeleting ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Trash2 className="h-4 w-4 mr-2" />
-              )}
+              <Trash2 className="h-4 w-4 mr-2" />
               Delete
             </Button>
           </div>
@@ -174,6 +170,31 @@ export default function PostDetailPage({ params }: PostDetailPageProps) {
       <div className="bg-card border rounded-lg p-6">
         <CommentSection postId={post._id} />
       </div>
+
+      {/* Edit Dialog */}
+      {isAuthor && post && (
+        <PostEditDialog
+          postId={post._id}
+          currentTitle={post.title}
+          currentContent={post.content}
+          currentPlanetaryPair={post.planetaryPairTag}
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          onSuccess={() => {
+            // Post will automatically re-fetch due to Convex reactivity
+          }}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {isAuthor && (
+        <DeleteConfirmDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          onConfirm={handleDelete}
+          isDeleting={isDeleting}
+        />
+      )}
     </div>
   );
 }
